@@ -1,0 +1,41 @@
+name: Build Zed Windows x64
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Enable long paths
+        run: New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
+      - name: Enable git long paths
+        run: git config --system core.longpaths true
+
+      - name: Build
+        run: cargo build --release --package zed
+        shell: pwsh
+        env:
+          ZED_RC_TOOLKIT_PATH: "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zed-win32-x64
+          path: target/release/zed.exe
+          retention-days: 7
